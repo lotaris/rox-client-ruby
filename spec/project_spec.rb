@@ -23,8 +23,8 @@ describe RoxClient::Project do
   describe "#validate!" do
     subject{ Project }
 
-    it "should raise an error if the name is missing" do
-      expect{ subject.new(project_options.merge(name: nil)).validate! }.to raise_payload_error(/missing/i, /name/i)
+    it "should not raise an error if the name is missing" do
+      expect{ subject.new(project_options.merge(name: nil)).validate! }.not_to raise_error
     end
 
     it "should raise an error if the version is missing" do

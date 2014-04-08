@@ -21,7 +21,7 @@ describe RoxClient::Cache do
     }
   ]
 
-  let(:cache_options){ { workspace: '/tmp', server_name: 'example', project_api_id: '123' } }
+  let(:cache_options){ { workspace: '/tmp', client_name: 'rspec', server_name: 'example', project_api_id: '123' } }
   let(:cache_contents){ build_cache_contents TESTS }
   subject{ Cache.new cache_options }
 

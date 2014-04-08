@@ -29,7 +29,7 @@ describe RoxClient::Client do
 
   let(:server_options){ { name: 'A server', api_url: API_URL, project_api_id: '0123456789', payload_options: {}, upload: nil } }
   let(:server){ double server_options }
-  let(:client_options){ { publish: true, workspace: WORKSPACE } }
+  let(:client_options){ { publish: true, workspace: WORKSPACE, client_name: 'rspec' } }
   let(:client){ RoxClient::Client.new server, client_options }
   subject{ client }
 
@@ -43,12 +43,12 @@ describe RoxClient::Client do
     subject{ RoxClient::Client }
 
     it "should create a cache manager" do
-      expect(RoxClient::Cache).to receive(:new).with(workspace: WORKSPACE, server_name: server_options[:name], project_api_id: server_options[:project_api_id])
+      expect(RoxClient::Cache).to receive(:new).with(workspace: WORKSPACE, client_name: 'rspec', server_name: server_options[:name], project_api_id: server_options[:project_api_id])
       RoxClient::Client.new server, client_options
     end
 
     it "should not raise an error if the server is missing" do
-      expect(RoxClient::Cache).to receive(:new).with(workspace: WORKSPACE)
+      expect(RoxClient::Cache).to receive(:new).with(workspace: WORKSPACE, client_name: 'rspec')
       expect{ RoxClient::Client.new nil, client_options }.not_to raise_error
     end
 

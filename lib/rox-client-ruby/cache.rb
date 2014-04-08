@@ -7,6 +7,7 @@ module RoxClient
     def initialize options = {}
       @tests = {}
       @workspace, @server_name, @project_api_id = options[:workspace], options[:server_name], options[:project_api_id]
+      @client_name = options[:client_name]
     end
 
     def save test_run
@@ -29,6 +30,7 @@ module RoxClient
       else
         {}
       end
+
       self
     end
 
@@ -43,7 +45,7 @@ module RoxClient
     private
 
     def validate!
-      required = { "workspace" => @workspace, "server name" => @server_name, "project API identifier" => @project_api_id }
+      required = { "workspace" => @workspace, "client name" => @client_name, "server name" => @server_name, "project API identifier" => @project_api_id }
       missing = required.keys.select{ |k| !required[k] }
       raise Error.new("Missing cache options: #{missing.join ', '}") if missing.any?
     end
@@ -53,7 +55,7 @@ module RoxClient
     end
 
     def cache_file
-      @cache_file ||= File.join(@workspace, 'rspec', 'servers', @server_name, 'cache.json')
+      @cache_file ||= File.join(@workspace, @client_name, 'servers', @server_name, 'cache.json')
     end
   end
 end

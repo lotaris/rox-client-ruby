@@ -15,7 +15,7 @@ describe RoxClient::TestRun do
   end
 
   it "should have no end time, duration or uid" do
-    expect(subject_attrs(:end_time, :duration, :uid)).to eq(end_time: nil, duration: nil, uid: nil)
+    expect(subject_attrs(:duration, :uid)).to eq(duration: nil, uid: nil)
   end
 
   it "should have no results" do
@@ -30,17 +30,14 @@ describe RoxClient::TestRun do
   end
 
   describe "#add_result" do
-    let(:example_double){ double }
-    let(:group_doubles){ [] }
-    let(:result_options){ {} }
+    let(:result_options){ { key: 'abc' } }
     let(:new_result_double){ double }
     before :each do
       TestResult.stub new: new_result_double
     end
 
     it "should add a new result" do
-      TestResult.stub extract_grouped: false, extract_key: nil
-      expect(TestResult).to receive(:new).with(project_double, example_double, group_doubles, result_options)
+      expect(TestResult).to receive(:new).with(project_double, result_options)
       add_result
       expect(subject.results).to eq([ new_result_double ])
     end
@@ -48,21 +45,16 @@ describe RoxClient::TestRun do
     it "should update an existing result" do
       existing_result = double key: 'abc', grouped?: true, update: nil
       subject.results << existing_result
-      TestResult.stub extract_grouped: true, extract_key: 'abc'
-      expect(TestResult).to receive(:extract_grouped).with(example_double, group_doubles)
-      expect(TestResult).to receive(:extract_key).with(example_double, group_doubles)
       expect(TestResult).not_to receive(:new)
-      expect(existing_result).to receive(:update).with(result_options)
-      add_result
+      expect(existing_result).to receive(:update).with(result_options.merge(grouped: true))
+      add_result grouped: true
       expect(subject.results).to eq([ existing_result ])
     end
 
     it "should not update an existing result that is not grouped" do
       existing_result = double key: 'abc', grouped?: false
       subject.results << existing_result
-      TestResult.stub extract_grouped: true, extract_key: 'abc'
-      expect(TestResult).to receive(:extract_grouped).with(example_double, group_doubles)
-      expect(TestResult).to receive(:new).with(project_double, example_double, group_doubles, result_options)
+      expect(TestResult).to receive(:new).with(project_double, result_options)
       expect(existing_result).not_to receive(:update)
       add_result
       expect(subject.results).to eq([ existing_result, new_result_double ])
@@ -71,12 +63,9 @@ describe RoxClient::TestRun do
     it "should not update an existing result if the key doesn't match" do
       existing_result = double key: 'abc', grouped?: true
       subject.results << existing_result
-      TestResult.stub extract_grouped: true, extract_key: 'bcd'
-      expect(TestResult).to receive(:extract_grouped).with(example_double, group_doubles)
-      expect(TestResult).to receive(:extract_key).with(example_double, group_doubles)
-      expect(TestResult).to receive(:new).with(project_double, example_double, group_doubles, result_options)
+      expect(TestResult).to receive(:new).with(project_double, result_options.merge(key: 'bcd', grouped: true))
       expect(existing_result).not_to receive(:update)
-      add_result
+      add_result key: 'bcd', grouped: true
       expect(subject.results).to eq([ existing_result, new_result_double ])
     end
 
@@ -172,8 +161,8 @@ describe RoxClient::TestRun do
       end
     end
 
-    def add_result
-      subject.add_result example_double, group_doubles, result_options
+    def add_result options = {}
+      subject.add_result result_options.merge(options)
     end
   end
 

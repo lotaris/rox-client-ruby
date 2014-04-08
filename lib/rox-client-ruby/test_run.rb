@@ -1,21 +1,20 @@
 module RoxClient
 
   class TestRun
-    # TODO: remove end time once API v0 is dead
     attr_reader :results, :project
-    attr_accessor :end_time, :duration, :uid
+    attr_accessor :duration, :uid
 
     def initialize project
       @results = []
       @project = project
     end
 
-    def add_result example, groups = [], options = {}
+    def add_result options = {}
 
-      if TestResult.extract_grouped(example, groups) and (existing_result = @results.find{ |r| r.grouped? && r.key == TestResult.extract_key(example, groups) })
+      if options[:grouped] && existing_result = @results.find{ |r| r.grouped? && r.key == options[:key] }
         existing_result.update options
       else
-        @results << TestResult.new(@project, example, groups, options)
+        @results << TestResult.new(@project, options)
       end
     end
 
@@ -33,31 +32,17 @@ module RoxClient
     def to_h options = {}
       validate!
 
-      case options[:version]
-      when 0
-        {
-          'r' => ENV['ROX_RUNNER_KEY'],
-          'e' => @end_time,
-          'd' => @duration,
-          'j' => @project.name,
-          'v' => @project.version,
-          't' => @results.collect{ |r| r.to_h options }
-        }.tap do |h|
-          h['u'] = @uid if @uid
-        end
-      else # version 1 by default
-        {
-          'd' => @duration,
-          'r' => [
-            {
-              'j' => @project.api_id,
-              'v' => @project.version,
-              't' => @results.collect{ |r| r.to_h options }
-            }
-          ]
-        }.tap do |h|
-          h['u'] = @uid if @uid
-        end
+      {
+        'd' => @duration,
+        'r' => [
+          {
+            'j' => @project.api_id,
+            'v' => @project.version,
+            't' => @results.collect{ |r| r.to_h options }
+          }
+        ]
+      }.tap do |h|
+        h['u'] = @uid if @uid
       end
     end
 

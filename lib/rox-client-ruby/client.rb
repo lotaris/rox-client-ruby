@@ -9,9 +9,11 @@ module RoxClient
       @server = server
       @publish, @local_mode, @workspace = options[:publish], options[:local_mode], options[:workspace]
       @cache_payload, @print_payload, @save_payload = options[:cache_payload], options[:print_payload], options[:save_payload]
+      @client_name = options[:client_name]
       
       cache_options = { workspace: @workspace }
       cache_options.merge! server_name: @server.name, project_api_id: @server.project_api_id if @server
+      cache_options.merge! client_name: @client_name if @client_name
       @cache = Cache.new cache_options
 
       @uid = UID.new workspace: @workspace
@@ -20,7 +22,8 @@ module RoxClient
     def process test_run
 
       puts
-      return fail "No server to publish results to" if !@server
+      return fail "No server to publish results to" unless @server
+      return fail "Client name must be specified" unless @client_name
 
       test_run.uid = @uid.load_uid
 
@@ -91,7 +94,7 @@ module RoxClient
     end
 
     def payload_file
-      @payload_file ||= File.join(@workspace, 'rspec', 'servers', @server.name, 'payload.json')
+      @payload_file ||= File.join(@workspace, @client_name, 'servers', @server.name, 'payload.json')
     end
 
     def publish_payload payload

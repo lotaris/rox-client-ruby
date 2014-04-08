@@ -17,7 +17,7 @@ module RoxClient
     end
 
     def validate!
-      required = { "name" => @name, "version" => @version, "API identifier" => @api_id }
+      required = { "version" => @version, "API identifier" => @api_id }
       missing = required.inject([]){ |memo,(k,v)| v.to_s.strip.length <= 0 ? memo << k : memo }
       raise PayloadError.new("Missing project options: #{missing.join ', '}") if missing.any?
     end

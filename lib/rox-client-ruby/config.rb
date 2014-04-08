@@ -9,15 +9,21 @@ module RoxClient
 
   def self.configure options = {}
     yield config if block_given?
+    @integration.each{ |block| block.call config }
     config.load_warnings.each{ |w| warn Paint["ROX - #{w}", :yellow] }
-    config.setup! if options[:setup] != false
     config
+  end
+
+  @integration = []
+
+  def self.integrate &block
+    @integration << block
   end
 
   class Config
     # TODO: add silent/verbose option(s)
     class Error < RoxClient::Error; end
-    attr_writer :publish, :local_mode, :cache_payload, :print_payload, :save_payload
+    attr_writer :publish, :local_mode, :cache_payload, :print_payload, :save_payload, :client_name
     attr_reader :project, :server, :workspace, :load_warnings
 
     def initialize
@@ -25,10 +31,6 @@ module RoxClient
       @project = Project.new
       @publish, @local_mode, @cache_payload, @print_payload, @save_payload = false, false, false, false, false
       @load_warnings = []
-    end
-
-    def setup!
-      # FIXME: provide client integration hook
     end
 
     def workspace= dir
@@ -50,7 +52,8 @@ module RoxClient
         workspace: @workspace,
         cache_payload: @cache_payload,
         print_payload: @print_payload,
-        save_payload: @save_payload
+        save_payload: @save_payload,
+        client_name: @client_name
       }.select{ |k,v| !v.nil? }
     end
 

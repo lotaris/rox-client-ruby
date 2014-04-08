@@ -29,23 +29,13 @@ describe RoxClient::Config do
 
   describe ".configure" do
     let(:load_warnings){ [] }
-    let(:config){ double load: nil, setup!: nil, load_warnings: load_warnings }
+    let(:config){ double load: nil, load_warnings: load_warnings }
     before(:each){ RoxClient.stub config: config }
 
     it "should yield and return the configuration" do
       result = nil
       expect{ |b| result = RoxClient.configure &b }.to yield_with_args(config)
       expect(result).to be(config)
-    end
-
-    it "should set up the configuration" do
-      expect(config).to receive(:setup!)
-      RoxClient.configure
-    end
-
-    it "should not set up if disabled" do
-      expect(config).not_to receive(:setup!)
-      RoxClient.configure setup: false
     end
 
     describe "with load warnings" do
@@ -57,6 +47,20 @@ describe RoxClient::Config do
         expect(c.stderr).to match('ROX - a')
         expect(c.stderr).to match('ROX - b')
       end
+    end
+  end
+
+  describe ".integrate" do
+    let(:calls){ [] }
+    let(:blocks){ Array.new(3){ |i| lambda{ |*args| calls << args } } }
+    let(:config){ double load: nil, load_warnings: [] }
+    before(:each){ RoxClient.stub config: config }
+
+
+    it "should allow to register configuration blocks" do
+      blocks.each{ |block| RoxClient.integrate &block }
+      RoxClient.configure
+      expect(calls).to eq([ [ config ], [ config ], [ config ] ])
     end
   end
 

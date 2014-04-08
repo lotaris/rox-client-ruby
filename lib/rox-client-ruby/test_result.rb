@@ -3,17 +3,16 @@ module RoxClient
   class TestResult
     attr_reader :key, :name, :category, :tags, :tickets, :duration, :message
 
-    def initialize project, example, groups = [], options = {}
+    def initialize project, options = {}
 
-      @category = project.category
-      @tags = project.tags
-      @tickets = project.tickets
+      @key = options[:key]
+      @name = options[:name]
 
-      @grouped = extract_grouped example, groups
+      @category = project.category || options[:category]
+      @tags = (wrap(project.tags) + wrap(options[:tags])).compact.collect(&:to_s).uniq
+      @tickets = (wrap(project.tickets) + wrap(options[:tickets])).compact.collect(&:to_s).uniq
 
-      [ :key, :name, :category, :tags, :tickets ].each do |attr|
-        instance_variable_set "@#{attr}".to_sym, send("extract_#{attr}".to_sym, example, groups)
-      end
+      @grouped = !!options[:grouped]
 
       @passed = !!options[:passed]
       @duration = options[:duration]
@@ -29,7 +28,7 @@ module RoxClient
     end
 
     def update options = {}
-      @passed &&= options[:passed]
+      @passed &&= !!options[:passed]
       @duration += options[:duration]
       @message = [ @message, options[:message] ].select{ |m| m }.join("\n\n") if options[:message]
     end
@@ -53,58 +52,7 @@ module RoxClient
       end
     end
 
-    def self.extract_grouped example, groups = []
-      !!groups.collect{ |g| meta(g)[:grouped] }.compact.last
-    end
-
-    def self.extract_key example, groups = []
-      (groups.collect{ |g| meta(g)[:key] } << meta(example)[:key]).compact.last
-    end
-
-    def self.meta holder
-      meta = holder.metadata[:rox] || {}
-      if meta.kind_of? String
-        { key: meta }
-      elsif meta.kind_of? Hash
-        meta
-      else
-        {}
-      end
-    end
-
     private
-
-    def meta *args
-      self.class.meta *args
-    end
-
-    def extract_grouped *args
-      self.class.extract_grouped *args
-    end
-
-    def extract_key *args
-      self.class.extract_key *args
-    end
-
-    def extract_name example, groups = []
-      parts = groups.dup
-      parts = parts[0, parts.index{ |p| meta(p)[:grouped] } + 1] if @grouped
-      parts << example unless @grouped
-      parts.collect{ |p| p.description.strip }.join ' '
-    end
-
-    def extract_category example, groups = []
-      cat = (groups.collect{ |g| meta(g)[:category] }.unshift(@category) << meta(example)[:category]).compact.last
-      cat ? cat.to_s : nil
-    end
-
-    def extract_tags example, groups = []
-      (wrap(@tags) + groups.collect{ |g| wrap meta(g)[:tags] } + (wrap meta(example)[:tags])).flatten.compact.uniq.collect(&:to_s)
-    end
-
-    def extract_tickets example, groups = []
-      (wrap(@tickets) + groups.collect{ |g| wrap meta(g)[:tickets] } + (wrap meta(example)[:tickets])).flatten.compact.uniq.collect(&:to_s)
-    end
 
     def wrap a
       a.kind_of?(Array) ? a : [ a ]
